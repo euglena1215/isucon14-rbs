@@ -1,0 +1,15 @@
+# Generated from lib/isuride/payment_gateway.rb with RBS::Inline
+
+module Isuride
+  class PaymentGateway
+    class UnexpectedStatusCode < StandardError
+    end
+
+    class ErroredUpstream < StandardError
+    end
+
+    def initialize: (untyped payment_gateway_url, untyped token) -> untyped
+
+    def request_post_payment: (untyped param) ?{ (?) -> untyped } -> untyped
+  end
+end

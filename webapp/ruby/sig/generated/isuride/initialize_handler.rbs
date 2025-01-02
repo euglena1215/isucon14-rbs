@@ -1,0 +1,16 @@
+# Generated from lib/isuride/initialize_handler.rb with RBS::Inline
+
+module Isuride
+  class InitializeHandler < BaseHandler
+    class PostInitializeRequest < Data
+      attr_reader payment_server(): untyped
+
+      def self.new: (untyped payment_server) -> instance
+                  | (payment_server: untyped) -> instance
+
+      def self.members: () -> [ :payment_server ]
+
+      def members: () -> [ :payment_server ]
+    end
+  end
+end

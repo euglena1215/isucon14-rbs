@@ -1,0 +1,116 @@
+# Generated from lib/isuride/app_handler.rb with RBS::Inline
+
+module Isuride
+  class AppHandler < BaseHandler
+    class CurrentUser < Data
+      attr_reader id(): untyped
+
+      attr_reader username(): untyped
+
+      attr_reader firstname(): untyped
+
+      attr_reader lastname(): untyped
+
+      attr_reader date_of_birth(): untyped
+
+      attr_reader access_token(): untyped
+
+      attr_reader invitation_code(): untyped
+
+      attr_reader created_at(): untyped
+
+      attr_reader updated_at(): untyped
+
+      def self.new: (untyped id, untyped username, untyped firstname, untyped lastname, untyped date_of_birth, untyped access_token, untyped invitation_code, untyped created_at, untyped updated_at) -> instance
+                  | (id: untyped, username: untyped, firstname: untyped, lastname: untyped, date_of_birth: untyped, access_token: untyped, invitation_code: untyped, created_at: untyped, updated_at: untyped) -> instance
+
+      def self.members: () -> [ :id, :username, :firstname, :lastname, :date_of_birth, :access_token, :invitation_code, :created_at, :updated_at ]
+
+      def members: () -> [ :id, :username, :firstname, :lastname, :date_of_birth, :access_token, :invitation_code, :created_at, :updated_at ]
+    end
+
+    class AppPostUsersRequest < Data
+      attr_reader username(): untyped
+
+      attr_reader firstname(): untyped
+
+      attr_reader lastname(): untyped
+
+      attr_reader date_of_birth(): untyped
+
+      attr_reader invitation_code(): untyped
+
+      def self.new: (untyped username, untyped firstname, untyped lastname, untyped date_of_birth, untyped invitation_code) -> instance
+                  | (username: untyped, firstname: untyped, lastname: untyped, date_of_birth: untyped, invitation_code: untyped) -> instance
+
+      def self.members: () -> [ :username, :firstname, :lastname, :date_of_birth, :invitation_code ]
+
+      def members: () -> [ :username, :firstname, :lastname, :date_of_birth, :invitation_code ]
+    end
+
+    class AppPostPaymentMethodsRequest < Data
+      attr_reader token(): untyped
+
+      def self.new: (untyped token) -> instance
+                  | (token: untyped) -> instance
+
+      def self.members: () -> [ :token ]
+
+      def members: () -> [ :token ]
+    end
+
+    class Coordinate < Data
+      attr_reader latitude(): untyped
+
+      attr_reader longitude(): untyped
+
+      def self.new: (untyped latitude, untyped longitude) -> instance
+                  | (latitude: untyped, longitude: untyped) -> instance
+
+      def self.members: () -> [ :latitude, :longitude ]
+
+      def members: () -> [ :latitude, :longitude ]
+    end
+
+    class AppPostRidesRequest < Data
+      attr_reader pickup_coordinate(): untyped
+
+      attr_reader destination_coordinate(): untyped
+
+      def self.new: (untyped pickup_coordinate, untyped destination_coordinate) -> instance
+                  | (pickup_coordinate: untyped, destination_coordinate: untyped) -> instance
+
+      def self.members: () -> [ :pickup_coordinate, :destination_coordinate ]
+
+      def members: () -> [ :pickup_coordinate, :destination_coordinate ]
+    end
+
+    class AppPostRidesEstimatedFareRequest < Data
+      attr_reader pickup_coordinate(): untyped
+
+      attr_reader destination_coordinate(): untyped
+
+      def self.new: (untyped pickup_coordinate, untyped destination_coordinate) -> instance
+                  | (pickup_coordinate: untyped, destination_coordinate: untyped) -> instance
+
+      def self.members: () -> [ :pickup_coordinate, :destination_coordinate ]
+
+      def members: () -> [ :pickup_coordinate, :destination_coordinate ]
+    end
+
+    class AppPostRideEvaluationRequest < Data
+      attr_reader evaluation(): untyped
+
+      def self.new: (untyped evaluation) -> instance
+                  | (evaluation: untyped) -> instance
+
+      def self.members: () -> [ :evaluation ]
+
+      def members: () -> [ :evaluation ]
+    end
+
+    def get_chair_stats: (untyped tx, untyped chair_id) -> untyped
+
+    def calculate_discounted_fare: (untyped tx, untyped user_id, untyped ride, untyped pickup_latitude, untyped pickup_longitude, untyped dest_latitude, untyped dest_longitude) -> untyped
+  end
+end

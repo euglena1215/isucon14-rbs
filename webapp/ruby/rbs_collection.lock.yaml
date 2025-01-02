@@ -1,0 +1,84 @@
+---
+path: ".gem_rbs_collection"
+gems:
+- name: base64
+  version: '0'
+  source:
+    type: stdlib
+- name: bigdecimal
+  version: '0'
+  source:
+    type: stdlib
+- name: cgi
+  version: '0'
+  source:
+    type: stdlib
+- name: logger
+  version: '0'
+  source:
+    type: stdlib
+- name: monitor
+  version: '0'
+  source:
+    type: stdlib
+- name: mysql2
+  version: '0.5'
+  source:
+    type: git
+    name: ruby/gem_rbs_collection
+    revision: '09beb2100db10cbf4773ed0e71ddf79280a2f275'
+    remote: https://github.com/ruby/gem_rbs_collection.git
+    repo_dir: gems
+- name: mysql2-cs-bind
+  version: '0.1'
+  source:
+    type: git
+    name: ruby/gem_rbs_collection
+    revision: '09beb2100db10cbf4773ed0e71ddf79280a2f275'
+    remote: https://github.com/ruby/gem_rbs_collection.git
+    repo_dir: gems
+- name: rack
+  version: '2.2'
+  source:
+    type: git
+    name: ruby/gem_rbs_collection
+    revision: '09beb2100db10cbf4773ed0e71ddf79280a2f275'
+    remote: https://github.com/ruby/gem_rbs_collection.git
+    repo_dir: gems
+- name: sinatra
+  version: '4.0'
+  source:
+    type: git
+    name: ruby/gem_rbs_collection
+    revision: '09beb2100db10cbf4773ed0e71ddf79280a2f275'
+    remote: https://github.com/ruby/gem_rbs_collection.git
+    repo_dir: gems
+- name: sinatra-contrib
+  version: '4.0'
+  source:
+    type: git
+    name: ruby/gem_rbs_collection
+    revision: '09beb2100db10cbf4773ed0e71ddf79280a2f275'
+    remote: https://github.com/ruby/gem_rbs_collection.git
+    repo_dir: gems
+- name: stringio
+  version: '0'
+  source:
+    type: stdlib
+- name: tempfile
+  version: '0'
+  source:
+    type: stdlib
+- name: ulid
+  version: '1.3'
+  source:
+    type: git
+    name: ruby/gem_rbs_collection
+    revision: '09beb2100db10cbf4773ed0e71ddf79280a2f275'
+    remote: https://github.com/ruby/gem_rbs_collection.git
+    repo_dir: gems
+- name: uri
+  version: '0'
+  source:
+    type: stdlib
+gemfile_lock_path: Gemfile.lock

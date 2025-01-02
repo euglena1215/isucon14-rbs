@@ -1,0 +1,6 @@
+# Generated from lib/isuride/internal_handler.rb with RBS::Inline
+
+module Isuride
+  class InternalHandler < BaseHandler
+  end
+end

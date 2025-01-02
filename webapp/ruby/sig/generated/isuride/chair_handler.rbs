@@ -1,0 +1,80 @@
+# Generated from lib/isuride/chair_handler.rb with RBS::Inline
+
+module Isuride
+  class ChairHandler < BaseHandler
+    class CurrentChair < Data
+      attr_reader id(): untyped
+
+      attr_reader owner_id(): untyped
+
+      attr_reader name(): untyped
+
+      attr_reader model(): untyped
+
+      attr_reader is_active(): untyped
+
+      attr_reader access_token(): untyped
+
+      attr_reader created_at(): untyped
+
+      attr_reader updated_at(): untyped
+
+      def self.new: (untyped id, untyped owner_id, untyped name, untyped model, untyped is_active, untyped access_token, untyped created_at, untyped updated_at) -> instance
+                  | (id: untyped, owner_id: untyped, name: untyped, model: untyped, is_active: untyped, access_token: untyped, created_at: untyped, updated_at: untyped) -> instance
+
+      def self.members: () -> [ :id, :owner_id, :name, :model, :is_active, :access_token, :created_at, :updated_at ]
+
+      def members: () -> [ :id, :owner_id, :name, :model, :is_active, :access_token, :created_at, :updated_at ]
+    end
+
+    class ChairPostChairsRequest < Data
+      attr_reader name(): untyped
+
+      attr_reader model(): untyped
+
+      attr_reader chair_register_token(): untyped
+
+      def self.new: (untyped name, untyped model, untyped chair_register_token) -> instance
+                  | (name: untyped, model: untyped, chair_register_token: untyped) -> instance
+
+      def self.members: () -> [ :name, :model, :chair_register_token ]
+
+      def members: () -> [ :name, :model, :chair_register_token ]
+    end
+
+    class PostChairActivityRequest < Data
+      attr_reader is_active(): untyped
+
+      def self.new: (untyped is_active) -> instance
+                  | (is_active: untyped) -> instance
+
+      def self.members: () -> [ :is_active ]
+
+      def members: () -> [ :is_active ]
+    end
+
+    class PostChairCoordinateRequest < Data
+      attr_reader latitude(): untyped
+
+      attr_reader longitude(): untyped
+
+      def self.new: (untyped latitude, untyped longitude) -> instance
+                  | (latitude: untyped, longitude: untyped) -> instance
+
+      def self.members: () -> [ :latitude, :longitude ]
+
+      def members: () -> [ :latitude, :longitude ]
+    end
+
+    class PostChairRidesRideIDStatusRequest < Data
+      attr_reader status(): untyped
+
+      def self.new: (untyped status) -> instance
+                  | (status: untyped) -> instance
+
+      def self.members: () -> [ :status ]
+
+      def members: () -> [ :status ]
+    end
+  end
+end

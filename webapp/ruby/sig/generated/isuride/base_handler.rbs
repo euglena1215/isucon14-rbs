@@ -1,0 +1,37 @@
+# Generated from lib/isuride/base_handler.rb with RBS::Inline
+
+# mysql2-cs-bind gem にマイクロ秒のサポートを入れる
+module Mysql2CsBindPatch
+  def quote: (untyped rawvalue) -> untyped
+end
+
+module Isuride
+  class BaseHandler < Sinatra::Base
+    INITIAL_FARE: ::Integer
+
+    FARE_PER_DISTANCE: ::Integer
+
+    class HttpError < Sinatra::Error
+      attr_reader code: untyped
+
+      def initialize: (untyped code, untyped message) -> untyped
+    end
+
+    def bind_json: (untyped data_class) -> untyped
+
+    def db: () -> untyped
+
+    def connect_db: () -> untyped
+
+    def db_transaction: () ?{ (?) -> untyped } -> untyped
+
+    def time_msec: (untyped time) -> untyped
+
+    def get_latest_ride_status: (untyped tx, untyped ride_id) -> untyped
+
+    # マンハッタン距離を求める
+    def calculate_distance: (untyped a_latitude, untyped a_longitude, untyped b_latitude, untyped b_longitude) -> untyped
+
+    def calculate_fare: (untyped pickup_latitude, untyped pickup_longitude, untyped dest_latitude, untyped dest_longitude) -> untyped
+  end
+end
