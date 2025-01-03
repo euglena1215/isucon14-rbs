@@ -12,11 +12,16 @@ module Isuride
     class ErroredUpstream < StandardError
     end
 
+    # @rbs @payment_gateway_url: String
+    # @rbs @token: String
+
+    # @rbs (String, String) -> void
     def initialize(payment_gateway_url, token)
       @payment_gateway_url = payment_gateway_url
       @token = token
     end
 
+    # @rbs (Hash[untyped, untyped]) { () -> ::Mysql2::ResultAsHash } -> void
     def request_post_payment(param, &retrieve_rides_order_by_created_at_asc)
       b = JSON.dump(param)
 
@@ -25,7 +30,9 @@ module Isuride
       retries = 0
       begin
         uri = URI.parse("#{@payment_gateway_url}/payments")
-        Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https') do |http|
+        raise unless uri.is_a?(URI::HTTP) || uri.is_a?(URI::HTTPS)
+        host = uri.host || raise
+        Net::HTTP.start(host, uri.port, use_ssl: uri.scheme == 'https') do |http|
           req = Net::HTTP::Post.new(uri.request_uri)
           req.body = b
           req['Content-Type'] = 'application/json'

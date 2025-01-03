@@ -1,0 +1,21 @@
+module Mysql2
+  # type の overload ってできない...？
+  # type row_value_type = Time | ...
+
+  class Client[ResultType]
+    def affected_rows: () -> Integer
+  end
+
+  class ResultAsHash
+    def size: () -> Integer
+  end
+  class ResultAsArray
+    def size: () -> Integer
+  end
+end
+
+module Net
+  class HTTP
+    def self.start: [T] (String address, ?Integer? port, ?String | :ENV | nil p_addr, ?Integer? p_port, ?String? p_user, ?String? p_pass, **untyped opt) { (Net::HTTP) -> T } -> T | ...
+  end
+end

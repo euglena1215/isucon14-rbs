@@ -7,15 +7,17 @@ require 'isuride/base_handler'
 module Isuride
   class ChairHandler < BaseHandler
     CurrentChair = Data.define(
-      :id,
-      :owner_id,
-      :name,
-      :model,
-      :is_active,
-      :access_token,
-      :created_at,
-      :updated_at,
+      :id, #: String
+      :owner_id, #: String
+      :name, #: String
+      :model, #: String
+      :is_active, #: bool
+      :access_token, #: String
+      :created_at, #: Time
+      :updated_at, #: Time
     )
+
+    # @rbs @current_chair: CurrentChair
 
     before do
       if request.path == '/api/chair/chairs'
@@ -31,10 +33,14 @@ module Isuride
         raise HttpError.new(401, 'invalid access token')
       end
 
-      @current_chair = CurrentChair.new(**chair)
+      @current_chair = CurrentChair.new(**chair) # steep:ignore
     end
 
-    ChairPostChairsRequest = Data.define(:name, :model, :chair_register_token)
+    ChairPostChairsRequest = Data.define(
+      :name, #: String
+      :model, #: String
+      :chair_register_token #: String
+    )
 
     # POST /api/chair/chairs
     post '/chairs' do
@@ -58,7 +64,9 @@ module Isuride
       json(id: chair_id, owner_id: owner.fetch(:id))
     end
 
-    PostChairActivityRequest = Data.define(:is_active)
+    PostChairActivityRequest = Data.define(
+      :is_active #: bool
+    )
 
     # POST /api/chair/activity
     post '/activity' do
@@ -79,11 +87,13 @@ module Isuride
         chair_location_id = ULID.generate
         tx.xquery('INSERT INTO chair_locations (id, chair_id, latitude, longitude) VALUES (?, ?, ?, ?)', chair_location_id, @current_chair.id, req.latitude, req.longitude)
 
-        location = tx.xquery('SELECT * FROM chair_locations WHERE id = ?', chair_location_id).first
+        location = tx.xquery('SELECT * FROM chair_locations WHERE id = ?', chair_location_id).first!
 
         ride = tx.xquery('SELECT * FROM rides WHERE chair_id = ? ORDER BY updated_at DESC LIMIT 1', @current_chair.id).first
         unless ride.nil?
-          status = get_latest_ride_status(tx, ride.fetch(:id))
+          r_id = ride.fetch(:id)
+          raise unless r_id.is_a?(String)
+          status = get_latest_ride_status(tx, r_id)
           if status != 'COMPLETED' && status != 'CANCELED'
             if req.latitude == ride.fetch(:pickup_latitude) && req.longitude == ride.fetch(:pickup_longitude) && status == 'ENROUTE'
               tx.xquery('INSERT INTO ride_statuses (id, ride_id, status) VALUES (?, ?, ?)', ULID.generate, ride.fetch(:id), 'PICKUP')
@@ -95,7 +105,9 @@ module Isuride
           end
         end
 
-        { recorded_at: time_msec(location.fetch(:created_at)) }
+        cl_created_at = location.fetch(:created_at)
+        raise unless cl_created_at.is_a?(Time)
+        { recorded_at: time_msec(cl_created_at) }
       end
 
       json(response)
@@ -107,17 +119,20 @@ module Isuride
         ride = tx.xquery('SELECT * FROM rides WHERE chair_id = ? ORDER BY updated_at DESC LIMIT 1', @current_chair.id).first
         unless ride
           halt json(data: nil, retry_after_ms: 30)
+          raise
         end
+        r_id = ride.fetch(:id)
+        raise unless r_id.is_a?(String)
 
         yet_sent_ride_status = tx.xquery('SELECT * FROM ride_statuses WHERE ride_id = ? AND chair_sent_at IS NULL ORDER BY created_at ASC LIMIT 1', ride.fetch(:id)).first
         status =
           if yet_sent_ride_status.nil?
-            get_latest_ride_status(tx, ride.fetch(:id))
+            get_latest_ride_status(tx, r_id)
           else
             yet_sent_ride_status.fetch(:status)
           end
 
-        user = tx.xquery('SELECT * FROM users WHERE id = ? FOR SHARE', ride.fetch(:user_id)).first
+        user = tx.xquery('SELECT * FROM users WHERE id = ? FOR SHARE', ride.fetch(:user_id)).first!
 
         unless yet_sent_ride_status.nil?
           tx.xquery('UPDATE ride_statuses SET chair_sent_at = CURRENT_TIMESTAMP(6) WHERE id = ?', yet_sent_ride_status.fetch(:id))
@@ -147,7 +162,9 @@ module Isuride
       json(response)
     end
 
-    PostChairRidesRideIDStatusRequest = Data.define(:status)
+    PostChairRidesRideIDStatusRequest = Data.define(
+      :status #: String
+    )
 
     # POST /api/chair/rides/:ride_id/status
     post '/rides/:ride_id/status' do
@@ -155,18 +172,20 @@ module Isuride
       req = bind_json(PostChairRidesRideIDStatusRequest)
 
       db_transaction do |tx|
-        ride = tx.xquery('SELECT * FROM rides WHERE id = ? FOR UPDATE', ride_id).first
+        ride = tx.xquery('SELECT * FROM rides WHERE id = ? FOR UPDATE', ride_id).first!
         if ride.fetch(:chair_id) != @current_chair.id
           raise HttpError.new(400, 'not assigned to this ride')
         end
 
         case req.status
-	# Acknowledge the ride
+	      # Acknowledge the ride
         when 'ENROUTE'
           tx.xquery('INSERT INTO ride_statuses (id, ride_id, status) VALUES (?, ?, ?)', ULID.generate, ride.fetch(:id), 'ENROUTE')
-	# After Picking up user
+	      # After Picking up user
         when 'CARRYING'
-          status = get_latest_ride_status(tx, ride.fetch(:id))
+          r_id = ride.fetch(:id)
+          raise unless r_id.is_a?(String)
+          status = get_latest_ride_status(tx, r_id)
           if status != 'PICKUP'
             raise HttpError.new(400, 'chair has not arrived yet')
           end

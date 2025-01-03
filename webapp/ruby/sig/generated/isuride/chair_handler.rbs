@@ -3,39 +3,41 @@
 module Isuride
   class ChairHandler < BaseHandler
     class CurrentChair < Data
-      attr_reader id(): untyped
+      attr_reader id(): String
 
-      attr_reader owner_id(): untyped
+      attr_reader owner_id(): String
 
-      attr_reader name(): untyped
+      attr_reader name(): String
 
-      attr_reader model(): untyped
+      attr_reader model(): String
 
-      attr_reader is_active(): untyped
+      attr_reader is_active(): bool
 
-      attr_reader access_token(): untyped
+      attr_reader access_token(): String
 
-      attr_reader created_at(): untyped
+      attr_reader created_at(): Time
 
-      attr_reader updated_at(): untyped
+      attr_reader updated_at(): Time
 
-      def self.new: (untyped id, untyped owner_id, untyped name, untyped model, untyped is_active, untyped access_token, untyped created_at, untyped updated_at) -> instance
-                  | (id: untyped, owner_id: untyped, name: untyped, model: untyped, is_active: untyped, access_token: untyped, created_at: untyped, updated_at: untyped) -> instance
+      def self.new: (String id, String owner_id, String name, String model, bool is_active, String access_token, Time created_at, Time updated_at) -> instance
+                  | (id: String, owner_id: String, name: String, model: String, is_active: bool, access_token: String, created_at: Time, updated_at: Time) -> instance
 
       def self.members: () -> [ :id, :owner_id, :name, :model, :is_active, :access_token, :created_at, :updated_at ]
 
       def members: () -> [ :id, :owner_id, :name, :model, :is_active, :access_token, :created_at, :updated_at ]
     end
 
+    @current_chair: CurrentChair
+
     class ChairPostChairsRequest < Data
-      attr_reader name(): untyped
+      attr_reader name(): String
 
-      attr_reader model(): untyped
+      attr_reader model(): String
 
-      attr_reader chair_register_token(): untyped
+      attr_reader chair_register_token(): String
 
-      def self.new: (untyped name, untyped model, untyped chair_register_token) -> instance
-                  | (name: untyped, model: untyped, chair_register_token: untyped) -> instance
+      def self.new: (String name, String model, String chair_register_token) -> instance
+                  | (name: String, model: String, chair_register_token: String) -> instance
 
       def self.members: () -> [ :name, :model, :chair_register_token ]
 
@@ -43,10 +45,10 @@ module Isuride
     end
 
     class PostChairActivityRequest < Data
-      attr_reader is_active(): untyped
+      attr_reader is_active(): bool
 
-      def self.new: (untyped is_active) -> instance
-                  | (is_active: untyped) -> instance
+      def self.new: (bool is_active) -> instance
+                  | (is_active: bool) -> instance
 
       def self.members: () -> [ :is_active ]
 
@@ -67,10 +69,10 @@ module Isuride
     end
 
     class PostChairRidesRideIDStatusRequest < Data
-      attr_reader status(): untyped
+      attr_reader status(): String
 
-      def self.new: (untyped status) -> instance
-                  | (status: untyped) -> instance
+      def self.new: (String status) -> instance
+                  | (status: String) -> instance
 
       def self.members: () -> [ :status ]
 

@@ -110,6 +110,7 @@ PLATFORMS
 
 DEPENDENCIES
   bigdecimal
+  listen
   mysql2
   mysql2-cs-bind
   puma

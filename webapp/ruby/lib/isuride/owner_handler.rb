@@ -7,13 +7,15 @@ require 'isuride/base_handler'
 module Isuride
   class OwnerHandler < BaseHandler
     CurrentOwner = Data.define(
-      :id,
-      :name,
-      :access_token,
-      :chair_register_token,
-      :created_at,
-      :updated_at,
+      :id, #: String
+      :name, #: String
+      :access_token, #: String
+      :chair_register_token, #: String
+      :created_at, #: Time
+      :updated_at, #: Time
     )
+
+    # @rbs @current_owner: CurrentOwner
 
     before do
       if request.path == '/api/owner/owners'
@@ -29,7 +31,7 @@ module Isuride
         raise HttpError.new(401, 'invalid access token')
       end
 
-      @current_owner = CurrentOwner.new(**owner)
+      @current_owner = CurrentOwner.new(**owner) # steep:ignore UnresolvedOverloading
     end
 
     OwnerPostOwnersRequest = Data.define(:name)
@@ -82,7 +84,10 @@ module Isuride
       res = db_transaction do |tx|
         chairs = tx.xquery('SELECT * FROM chairs WHERE owner_id = ?', @current_owner.id)
 
-        res = { total_sales: 0, chairs: [] }
+        res = {
+          total_sales: 0,
+          chairs: []
+        } #: { total_sales: Integer, chairs: Array[Hash[Symbol, untyped]] }
 
         model_sales_by_model = Hash.new { |h, k| h[k] = 0 }
         chairs.each do |chair|
@@ -136,16 +141,20 @@ module Isuride
 
       json(
         chairs: chairs.map { |chair|
+          c_created_at = chair.fetch(:created_at)
+          raise unless c_created_at.is_a?(Time)
           {
             id: chair.fetch(:id),
             name: chair.fetch(:name),
             model: chair.fetch(:model),
             active: chair.fetch(:is_active),
-            registered_at: time_msec(chair.fetch(:created_at)),
+            registered_at: time_msec(c_created_at),
             total_distance: chair.fetch(:total_distance),
           }.tap do |c|
             unless chair.fetch(:total_distance_updated_at).nil?
-              c[:total_distance_updated_at] = time_msec(chair.fetch(:total_distance_updated_at))
+              c_total_distance_updated_at = chair.fetch(:total_distance_updated_at)
+              raise unless c_total_distance_updated_at.is_a?(Time)
+              c[:total_distance_updated_at] = time_msec(c_total_distance_updated_at)
             end
           end
         },
@@ -153,12 +162,14 @@ module Isuride
     end
 
     helpers do
+      # @rbs (Array[Hash[Symbol, untyped]]) -> Integer
       def sum_sales(rides)
         rides.sum { |ride| calculate_sale(ride) }
       end
 
+      # @rbs (Hash[Symbol, untyped]) -> Integer
       def calculate_sale(ride)
-        calculate_fare(*ride.values_at(:pickup_latitude, :pickup_longitude, :destination_latitude, :destination_longitude))
+        calculate_fare(*ride.values_at(:pickup_latitude, :pickup_longitude, :destination_latitude, :destination_longitude)) # steep:ignore UnexpectedPositionalArgument
       end
     end
   end

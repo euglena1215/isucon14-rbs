@@ -12,26 +12,55 @@ module Isuride
     FARE_PER_DISTANCE: ::Integer
 
     class HttpError < Sinatra::Error
+      # @dynamic code
       attr_reader code: untyped
 
       def initialize: (untyped code, untyped message) -> untyped
     end
 
-    def bind_json: (untyped data_class) -> untyped
+    # @rbs (singleton(AppHandler::AppPostUsersRequest)) -> AppHandler::AppPostUsersRequest
+    #    | (singleton(AppHandler::AppPostPaymentMethodsRequest)) -> AppHandler::AppPostPaymentMethodsRequest
+    #    | (singleton(AppHandler::AppPostRidesRequest)) -> AppHandler::AppPostRidesRequest
+    #    | (singleton(AppHandler::AppPostRidesEstimatedFareRequest)) -> AppHandler::AppPostRidesEstimatedFareRequest
+    #    | (singleton(AppHandler::AppPostRideEvaluationRequest)) -> AppHandler::AppPostRideEvaluationRequest
+    #    | (singleton(ChairHandler::ChairPostChairsRequest)) -> ChairHandler::ChairPostChairsRequest
+    #    | (singleton(ChairHandler::PostChairActivityRequest)) -> ChairHandler::PostChairActivityRequest
+    #    | (singleton(ChairHandler::PostChairCoordinateRequest)) -> ChairHandler::PostChairCoordinateRequest
+    #    | (singleton(ChairHandler::PostChairRidesRideIDStatusRequest)) -> ChairHandler::PostChairRidesRideIDStatusRequest
+    #    | (singleton(InitializeHandler::PostInitializeRequest)) -> InitializeHandler::PostInitializeRequest
+    #    | (singleton(OwnerHandler::OwnerPostOwnersRequest)) -> OwnerHandler::OwnerPostOwnersRequest
+    def bind_json: (singleton(AppHandler::AppPostUsersRequest)) -> AppHandler::AppPostUsersRequest
+                 | (singleton(AppHandler::AppPostPaymentMethodsRequest)) -> AppHandler::AppPostPaymentMethodsRequest
+                 | (singleton(AppHandler::AppPostRidesRequest)) -> AppHandler::AppPostRidesRequest
+                 | (singleton(AppHandler::AppPostRidesEstimatedFareRequest)) -> AppHandler::AppPostRidesEstimatedFareRequest
+                 | (singleton(AppHandler::AppPostRideEvaluationRequest)) -> AppHandler::AppPostRideEvaluationRequest
+                 | (singleton(ChairHandler::ChairPostChairsRequest)) -> ChairHandler::ChairPostChairsRequest
+                 | (singleton(ChairHandler::PostChairActivityRequest)) -> ChairHandler::PostChairActivityRequest
+                 | (singleton(ChairHandler::PostChairCoordinateRequest)) -> ChairHandler::PostChairCoordinateRequest
+                 | (singleton(ChairHandler::PostChairRidesRideIDStatusRequest)) -> ChairHandler::PostChairRidesRideIDStatusRequest
+                 | (singleton(InitializeHandler::PostInitializeRequest)) -> InitializeHandler::PostInitializeRequest
+                 | (singleton(OwnerHandler::OwnerPostOwnersRequest)) -> OwnerHandler::OwnerPostOwnersRequest
 
-    def db: () -> untyped
+    # @rbs () -> ::Mysql2::Client[::Mysql2::ResultAsHash]
+    def db: () -> ::Mysql2::Client[::Mysql2::ResultAsHash]
 
-    def connect_db: () -> untyped
+    # @rbs () -> ::Mysql2::Client[::Mysql2::ResultAsHash]
+    def connect_db: () -> ::Mysql2::Client[::Mysql2::ResultAsHash]
 
-    def db_transaction: () ?{ (?) -> untyped } -> untyped
+    # @rbs [T] () { (Mysql2::Client[::Mysql2::ResultAsHash]) -> T } -> T
+    def db_transaction: [T] () { (Mysql2::Client[::Mysql2::ResultAsHash]) -> T } -> T
 
-    def time_msec: (untyped time) -> untyped
+    # @rbs (Time) -> Integer
+    def time_msec: (Time) -> Integer
 
-    def get_latest_ride_status: (untyped tx, untyped ride_id) -> untyped
+    # @rbs (Mysql2::Client[::Mysql2::ResultAsHash], String) -> String
+    def get_latest_ride_status: (Mysql2::Client[::Mysql2::ResultAsHash], String) -> String
 
     # マンハッタン距離を求める
-    def calculate_distance: (untyped a_latitude, untyped a_longitude, untyped b_latitude, untyped b_longitude) -> untyped
+    # @rbs (Integer, Integer, Integer, Integer) -> Integer
+    def calculate_distance: (Integer, Integer, Integer, Integer) -> Integer
 
-    def calculate_fare: (untyped pickup_latitude, untyped pickup_longitude, untyped dest_latitude, untyped dest_longitude) -> untyped
+    # @rbs (Integer, Integer, Integer, Integer) -> Integer
+    def calculate_fare: (Integer, Integer, Integer, Integer) -> Integer
   end
 end

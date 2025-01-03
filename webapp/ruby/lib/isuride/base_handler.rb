@@ -12,7 +12,8 @@ module Mysql2CsBindPatch
     if rawvalue.respond_to?(:strftime)
       "'#{rawvalue.strftime('%Y-%m-%d %H:%M:%S.%6N')}'"
     else
-      super
+      # prepend を使う想定だと常に UnexpectedSuper が出そうな気がする。何か対応が必要そう
+      super # steep:ignore UnexpectedSuper
     end
   end
 end
@@ -27,6 +28,7 @@ module Isuride
     set :show_exceptions, :after_handler
 
     class HttpError < Sinatra::Error
+      # @dynamic code
       attr_reader :code
 
       def initialize(code, message)
@@ -43,15 +45,28 @@ module Isuride
     helpers Sinatra::Cookies
 
     helpers do
+      # @rbs (singleton(AppHandler::AppPostUsersRequest)) -> AppHandler::AppPostUsersRequest
+      #    | (singleton(AppHandler::AppPostPaymentMethodsRequest)) -> AppHandler::AppPostPaymentMethodsRequest
+      #    | (singleton(AppHandler::AppPostRidesRequest)) -> AppHandler::AppPostRidesRequest
+      #    | (singleton(AppHandler::AppPostRidesEstimatedFareRequest)) -> AppHandler::AppPostRidesEstimatedFareRequest
+      #    | (singleton(AppHandler::AppPostRideEvaluationRequest)) -> AppHandler::AppPostRideEvaluationRequest
+      #    | (singleton(ChairHandler::ChairPostChairsRequest)) -> ChairHandler::ChairPostChairsRequest
+      #    | (singleton(ChairHandler::PostChairActivityRequest)) -> ChairHandler::PostChairActivityRequest
+      #    | (singleton(ChairHandler::PostChairCoordinateRequest)) -> ChairHandler::PostChairCoordinateRequest
+      #    | (singleton(ChairHandler::PostChairRidesRideIDStatusRequest)) -> ChairHandler::PostChairRidesRideIDStatusRequest
+      #    | (singleton(InitializeHandler::PostInitializeRequest)) -> InitializeHandler::PostInitializeRequest
+      #    | (singleton(OwnerHandler::OwnerPostOwnersRequest)) -> OwnerHandler::OwnerPostOwnersRequest
       def bind_json(data_class)
-        body = JSON.parse(request.body.tap(&:rewind).read, symbolize_names: true)
-        data_class.new(**data_class.members.map { |key| [key, body[key]] }.to_h)
+        body = JSON.parse(request.body.tap(&:rewind).read, symbolize_names: true) #: Hash[Symbol, untyped]
+        data_class.new(**data_class.members.map { |key| [key, body[key]] }.to_h) # steep:ignore
       end
 
+      # @rbs () -> ::Mysql2::Client[::Mysql2::ResultAsHash]
       def db
         Thread.current[:db] ||= connect_db
       end
 
+      # @rbs () -> ::Mysql2::Client[::Mysql2::ResultAsHash]
       def connect_db
         Mysql2::Client.new(
           host: ENV.fetch('ISUCON_DB_HOST', '127.0.0.1'),
@@ -66,6 +81,7 @@ module Isuride
         )
       end
 
+      # @rbs [T] () { (Mysql2::Client[::Mysql2::ResultAsHash]) -> T } -> T
       def db_transaction(&block)
         db.query('BEGIN')
         ok = false
@@ -81,19 +97,25 @@ module Isuride
         end
       end
 
+      # @rbs (Time) -> Integer
       def time_msec(time)
         time.to_i*1000 + time.usec/1000
       end
 
+      # @rbs (Mysql2::Client[::Mysql2::ResultAsHash], String) -> String
       def get_latest_ride_status(tx, ride_id)
-        tx.xquery('SELECT status FROM ride_statuses WHERE ride_id = ? ORDER BY created_at DESC LIMIT 1', ride_id).first.fetch(:status)
+        status = tx.xquery('SELECT status FROM ride_statuses WHERE ride_id = ? ORDER BY created_at DESC LIMIT 1', ride_id).first!.fetch(:status)
+        raise unless status.is_a?(String)
+        status
       end
 
       # マンハッタン距離を求める
+      # @rbs (Integer, Integer, Integer, Integer) -> Integer
       def calculate_distance(a_latitude, a_longitude, b_latitude, b_longitude)
         (a_latitude - b_latitude).abs + (a_longitude - b_longitude).abs
       end
 
+      # @rbs (Integer, Integer, Integer, Integer) -> Integer
       def calculate_fare(pickup_latitude, pickup_longitude, dest_latitude, dest_longitude)
         metered_fare = FARE_PER_DISTANCE * calculate_distance(pickup_latitude, pickup_longitude, dest_latitude, dest_longitude)
         INITIAL_FARE + metered_fare

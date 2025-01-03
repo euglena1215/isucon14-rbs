@@ -3,6 +3,6 @@ D = Steep::Diagnostic
 target :app do
   signature "sig"
   check "lib"
-  library "securerandom"
+  library "securerandom", "json" , "net-http", "open3"
   configure_code_diagnostics(D::Ruby.all_error)
 end

@@ -3,25 +3,27 @@
 module Isuride
   class OwnerHandler < BaseHandler
     class CurrentOwner < Data
-      attr_reader id(): untyped
+      attr_reader id(): String
 
-      attr_reader name(): untyped
+      attr_reader name(): String
 
-      attr_reader access_token(): untyped
+      attr_reader access_token(): String
 
-      attr_reader chair_register_token(): untyped
+      attr_reader chair_register_token(): String
 
-      attr_reader created_at(): untyped
+      attr_reader created_at(): Time
 
-      attr_reader updated_at(): untyped
+      attr_reader updated_at(): Time
 
-      def self.new: (untyped id, untyped name, untyped access_token, untyped chair_register_token, untyped created_at, untyped updated_at) -> instance
-                  | (id: untyped, name: untyped, access_token: untyped, chair_register_token: untyped, created_at: untyped, updated_at: untyped) -> instance
+      def self.new: (String id, String name, String access_token, String chair_register_token, Time created_at, Time updated_at) -> instance
+                  | (id: String, name: String, access_token: String, chair_register_token: String, created_at: Time, updated_at: Time) -> instance
 
       def self.members: () -> [ :id, :name, :access_token, :chair_register_token, :created_at, :updated_at ]
 
       def members: () -> [ :id, :name, :access_token, :chair_register_token, :created_at, :updated_at ]
     end
+
+    @current_owner: CurrentOwner
 
     class OwnerPostOwnersRequest < Data
       attr_reader name(): untyped
@@ -34,8 +36,10 @@ module Isuride
       def members: () -> [ :name ]
     end
 
-    def sum_sales: (untyped rides) -> untyped
+    # @rbs (Array[Hash[Symbol, untyped]]) -> Integer
+    def sum_sales: (Array[Hash[Symbol, untyped]]) -> Integer
 
-    def calculate_sale: (untyped ride) -> untyped
+    # @rbs (Hash[Symbol, untyped]) -> Integer
+    def calculate_sale: (Hash[Symbol, untyped]) -> Integer
   end
 end

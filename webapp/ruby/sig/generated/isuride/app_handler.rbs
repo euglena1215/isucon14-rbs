@@ -1,47 +1,54 @@
 # Generated from lib/isuride/app_handler.rb with RBS::Inline
 
+# @rbs generic unchecked out Elem
+module Enumerable[unchecked out Elem]
+  def first!: () -> Elem
+end
+
 module Isuride
   class AppHandler < BaseHandler
     class CurrentUser < Data
-      attr_reader id(): untyped
+      attr_reader id(): String
 
-      attr_reader username(): untyped
+      attr_reader username(): String
 
-      attr_reader firstname(): untyped
+      attr_reader firstname(): String
 
-      attr_reader lastname(): untyped
+      attr_reader lastname(): String
 
-      attr_reader date_of_birth(): untyped
+      attr_reader date_of_birth(): String
 
-      attr_reader access_token(): untyped
+      attr_reader access_token(): String
 
-      attr_reader invitation_code(): untyped
+      attr_reader invitation_code(): String
 
-      attr_reader created_at(): untyped
+      attr_reader created_at(): Time
 
-      attr_reader updated_at(): untyped
+      attr_reader updated_at(): Time
 
-      def self.new: (untyped id, untyped username, untyped firstname, untyped lastname, untyped date_of_birth, untyped access_token, untyped invitation_code, untyped created_at, untyped updated_at) -> instance
-                  | (id: untyped, username: untyped, firstname: untyped, lastname: untyped, date_of_birth: untyped, access_token: untyped, invitation_code: untyped, created_at: untyped, updated_at: untyped) -> instance
+      def self.new: (String id, String username, String firstname, String lastname, String date_of_birth, String access_token, String invitation_code, Time created_at, Time updated_at) -> instance
+                  | (id: String, username: String, firstname: String, lastname: String, date_of_birth: String, access_token: String, invitation_code: String, created_at: Time, updated_at: Time) -> instance
 
       def self.members: () -> [ :id, :username, :firstname, :lastname, :date_of_birth, :access_token, :invitation_code, :created_at, :updated_at ]
 
       def members: () -> [ :id, :username, :firstname, :lastname, :date_of_birth, :access_token, :invitation_code, :created_at, :updated_at ]
     end
 
+    @current_user: CurrentUser
+
     class AppPostUsersRequest < Data
-      attr_reader username(): untyped
+      attr_reader username(): String
 
-      attr_reader firstname(): untyped
+      attr_reader firstname(): String
 
-      attr_reader lastname(): untyped
+      attr_reader lastname(): String
 
-      attr_reader date_of_birth(): untyped
+      attr_reader date_of_birth(): String
 
-      attr_reader invitation_code(): untyped
+      attr_reader invitation_code(): String
 
-      def self.new: (untyped username, untyped firstname, untyped lastname, untyped date_of_birth, untyped invitation_code) -> instance
-                  | (username: untyped, firstname: untyped, lastname: untyped, date_of_birth: untyped, invitation_code: untyped) -> instance
+      def self.new: (String username, String firstname, String lastname, String date_of_birth, String invitation_code) -> instance
+                  | (username: String, firstname: String, lastname: String, date_of_birth: String, invitation_code: String) -> instance
 
       def self.members: () -> [ :username, :firstname, :lastname, :date_of_birth, :invitation_code ]
 
@@ -49,10 +56,10 @@ module Isuride
     end
 
     class AppPostPaymentMethodsRequest < Data
-      attr_reader token(): untyped
+      attr_reader token(): String?
 
-      def self.new: (untyped token) -> instance
-                  | (token: untyped) -> instance
+      def self.new: (String? token) -> instance
+                  | (token: String?) -> instance
 
       def self.members: () -> [ :token ]
 
@@ -60,12 +67,12 @@ module Isuride
     end
 
     class Coordinate < Data
-      attr_reader latitude(): untyped
+      attr_reader latitude(): Integer
 
-      attr_reader longitude(): untyped
+      attr_reader longitude(): Integer
 
-      def self.new: (untyped latitude, untyped longitude) -> instance
-                  | (latitude: untyped, longitude: untyped) -> instance
+      def self.new: (Integer latitude, Integer longitude) -> instance
+                  | (latitude: Integer, longitude: Integer) -> instance
 
       def self.members: () -> [ :latitude, :longitude ]
 
@@ -85,32 +92,44 @@ module Isuride
       def members: () -> [ :pickup_coordinate, :destination_coordinate ]
     end
 
+    class AppPostRidesRequest
+      # @rbs (pickup_coordinate: Hash[Symbol, untyped], destination_coordinate: Hash[Symbol, untyped], **untyped) -> void
+      def initialize: (pickup_coordinate: Hash[Symbol, untyped], destination_coordinate: Hash[Symbol, untyped], **untyped) -> void
+    end
+
     class AppPostRidesEstimatedFareRequest < Data
-      attr_reader pickup_coordinate(): untyped
+      attr_reader pickup_coordinate(): Coordinate?
 
-      attr_reader destination_coordinate(): untyped
+      attr_reader destination_coordinate(): Coordinate?
 
-      def self.new: (untyped pickup_coordinate, untyped destination_coordinate) -> instance
-                  | (pickup_coordinate: untyped, destination_coordinate: untyped) -> instance
+      def self.new: (Coordinate? pickup_coordinate, Coordinate? destination_coordinate) -> instance
+                  | (pickup_coordinate: Coordinate?, destination_coordinate: Coordinate?) -> instance
 
       def self.members: () -> [ :pickup_coordinate, :destination_coordinate ]
 
       def members: () -> [ :pickup_coordinate, :destination_coordinate ]
     end
 
-    class AppPostRideEvaluationRequest < Data
-      attr_reader evaluation(): untyped
+    class AppPostRidesEstimatedFareRequest
+      # @rbs (pickup_coordinate: Hash[Symbol, untyped], destination_coordinate: Hash[Symbol, untyped], **untyped) -> void
+      def initialize: (pickup_coordinate: Hash[Symbol, untyped], destination_coordinate: Hash[Symbol, untyped], **untyped) -> void
+    end
 
-      def self.new: (untyped evaluation) -> instance
-                  | (evaluation: untyped) -> instance
+    class AppPostRideEvaluationRequest < Data
+      attr_reader evaluation(): Integer
+
+      def self.new: (Integer evaluation) -> instance
+                  | (evaluation: Integer) -> instance
 
       def self.members: () -> [ :evaluation ]
 
       def members: () -> [ :evaluation ]
     end
 
-    def get_chair_stats: (untyped tx, untyped chair_id) -> untyped
+    # @rbs (Mysql2::Client[::Mysql2::ResultAsHash], String) -> { total_rides_count: Integer, total_evaluation_avg: Float }
+    def get_chair_stats: (Mysql2::Client[::Mysql2::ResultAsHash], String) -> { total_rides_count: Integer, total_evaluation_avg: Float }
 
-    def calculate_discounted_fare: (untyped tx, untyped user_id, untyped ride, untyped pickup_latitude, untyped pickup_longitude, untyped dest_latitude, untyped dest_longitude) -> untyped
+    # @rbs (Mysql2::Client[::Mysql2::ResultAsHash], String, Hash[Symbol, untyped]?, Integer, Integer, Integer, Integer) -> Integer
+    def calculate_discounted_fare: (Mysql2::Client[::Mysql2::ResultAsHash], String, Hash[Symbol, untyped]?, Integer, Integer, Integer, Integer) -> Integer
   end
 end

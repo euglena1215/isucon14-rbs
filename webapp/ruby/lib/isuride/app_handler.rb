@@ -5,19 +5,28 @@ require 'ulid'
 require 'isuride/base_handler'
 require 'isuride/payment_gateway'
 
+# @rbs generic unchecked out Elem
+module Enumerable
+  def first! #: Elem
+    first || raise('empty')
+  end
+end
+
 module Isuride
   class AppHandler < BaseHandler
     CurrentUser = Data.define(
-      :id,
-      :username,
-      :firstname,
-      :lastname,
-      :date_of_birth,
-      :access_token,
-      :invitation_code,
-      :created_at,
-      :updated_at,
+      :id, #: String
+      :username, #: String
+      :firstname, #: String
+      :lastname, #: String
+      :date_of_birth, #: String
+      :access_token, #: String
+      :invitation_code, #: String
+      :created_at, #: Time
+      :updated_at, #: Time
     )
+
+    # @rbs @current_user: CurrentUser
 
     before do
       if request.path == '/api/app/users'
@@ -33,15 +42,15 @@ module Isuride
         raise HttpError.new(401, 'invalid access token')
       end
 
-      @current_user = CurrentUser.new(**user)
+      @current_user = CurrentUser.new(**user) # steep:ignore UnresolvedOverloading
     end
 
     AppPostUsersRequest = Data.define(
-      :username,
-      :firstname,
-      :lastname,
-      :date_of_birth,
-      :invitation_code,
+      :username, #: String
+      :firstname, #: String
+      :lastname, #: String
+      :date_of_birth, #: String
+      :invitation_code, #: String
     )
 
     # POST /api/app/users
@@ -58,10 +67,10 @@ module Isuride
       db_transaction do |tx|
         tx.xquery('INSERT INTO users (id, username, firstname, lastname, date_of_birth, access_token, invitation_code) VALUES (?, ?, ?, ?, ?, ?, ?)', user_id, req.username, req.firstname, req.lastname, req.date_of_birth, access_token, invitation_code)
 
-	# 初回登録キャンペーンのクーポンを付与
+	      # 初回登録キャンペーンのクーポンを付与
         tx.xquery('INSERT INTO coupons (user_id, code, discount) VALUES (?, ?, ?)', user_id, 'CP_NEW2024', 3000)
 
-	# 招待コードを使った登録
+	      # 招待コードを使った登録
         unless req.invitation_code.nil? || req.invitation_code.empty?
           # 招待する側の招待数をチェック
           coupons = tx.xquery('SELECT * FROM coupons WHERE code = ? FOR UPDATE', "INV_#{req.invitation_code}").to_a
@@ -87,7 +96,9 @@ module Isuride
       json(id: user_id, invitation_code:)
     end
 
-    AppPostPaymentMethodsRequest = Data.define(:token)
+    AppPostPaymentMethodsRequest = Data.define(
+      :token #: String?
+    )
 
     # POST /api/app/payment-methods
     post '/payment-methods' do
@@ -107,15 +118,31 @@ module Isuride
         rides = tx.xquery('SELECT * FROM rides WHERE user_id = ? ORDER BY created_at DESC', @current_user.id)
 
         rides.filter_map do |ride|
-          status = get_latest_ride_status(tx, ride.fetch(:id))
+          ride_id = ride.fetch(:id)
+          raise unless ride_id.is_a?(String)
+          status = get_latest_ride_status(tx, ride_id)
           if status != 'COMPLETED'
             next
           end
 
-          fare = calculate_discounted_fare(tx, @current_user.id, ride, ride.fetch(:pickup_latitude),  ride.fetch(:pickup_longitude), ride.fetch(:destination_latitude), ride.fetch(:destination_longitude))
+          ride_created_at = ride.fetch(:created_at)
+          ride_updated_at = ride.fetch(:updated_at)
+          raise unless ride_created_at.is_a?(Time)
+          raise unless ride_updated_at.is_a?(Time)
 
-          chair = tx.xquery('SELECT * FROM chairs WHERE id = ?', ride.fetch(:chair_id)).first
-          owner = tx.xquery('SELECT * FROM owners WHERE id = ?', chair.fetch(:owner_id)).first
+          ride_pickup_latitude = ride.fetch(:pickup_latitude)
+          ride_pickup_longitude = ride.fetch(:pickup_longitude)
+          ride_dest_latitude = ride.fetch(:destination_latitude)
+          ride_dest_longitude = ride.fetch(:destination_longitude)
+          raise unless ride_pickup_latitude.is_a?(Integer)
+          raise unless ride_pickup_longitude.is_a?(Integer)
+          raise unless ride_dest_latitude.is_a?(Integer)
+          raise unless ride_dest_longitude.is_a?(Integer)
+
+          fare = calculate_discounted_fare(tx, @current_user.id, ride, ride_pickup_latitude, ride_pickup_longitude, ride_dest_latitude, ride_dest_latitude)
+
+          chair = tx.xquery('SELECT * FROM chairs WHERE id = ?', ride.fetch(:chair_id)).first!
+          owner = tx.xquery('SELECT * FROM owners WHERE id = ?', chair.fetch(:owner_id)).first!
 
           {
             id: ride.fetch(:id),
@@ -129,8 +156,8 @@ module Isuride
             },
             fare:,
             evaluation: ride.fetch(:evaluation),
-            requested_at: time_msec(ride.fetch(:created_at)),
-            completed_at: time_msec(ride.fetch(:updated_at)),
+            requested_at: time_msec(ride_created_at),
+            completed_at: time_msec(ride_updated_at),
             chair: {
               id: chair.fetch(:id),
               name: chair.fetch(:name),
@@ -144,13 +171,19 @@ module Isuride
       json(rides: items)
     end
 
-    Coordinate = Data.define(:latitude, :longitude)
+    Coordinate = Data.define(
+      :latitude, #: Integer
+      :longitude #: Integer
+    )
 
-    AppPostRidesRequest = Data.define(:pickup_coordinate, :destination_coordinate) do
+    AppPostRidesRequest = Data.define(:pickup_coordinate, :destination_coordinate)
+    class AppPostRidesRequest
+      # @rbs (pickup_coordinate: Hash[Symbol, untyped], destination_coordinate: Hash[Symbol, untyped], **untyped) -> void
       def initialize(pickup_coordinate:, destination_coordinate:, **kwargs)
+        # やっぱりオープンクラスで参照する super は steep で正しく評価するのは難しそう
         super(
-          pickup_coordinate: Coordinate.new(**pickup_coordinate),
-          destination_coordinate: Coordinate.new(**destination_coordinate),
+          pickup_coordinate: Coordinate.new(**pickup_coordinate), # steep:ignore
+          destination_coordinate: Coordinate.new(**destination_coordinate), # steep:ignore
           **kwargs,
         )
       end
@@ -169,7 +202,9 @@ module Isuride
         rides = tx.xquery('SELECT * FROM rides WHERE user_id = ?', @current_user.id).to_a
 
         continuing_ride_count = rides.count do |ride|
-          status = get_latest_ride_status(tx, ride.fetch(:id))
+          rid = ride.fetch(:id)
+          raise unless rid.is_a?(String)
+          status = get_latest_ride_status(tx, rid)
           status != 'COMPLETED'
         end
 
@@ -189,7 +224,7 @@ module Isuride
 
         tx.xquery('INSERT INTO ride_statuses (id, ride_id, status) VALUES (?, ?, ?)', ULID.generate, ride_id, 'MATCHING')
 
-        ride_count = tx.xquery('SELECT COUNT(*) FROM rides WHERE user_id = ?', @current_user.id, as: :array).first[0]
+        ride_count = tx.xquery('SELECT COUNT(*) FROM rides WHERE user_id = ?', @current_user.id, as: :array).first![0]
 
         if ride_count == 1
           # 初回利用で、初回利用クーポンがあれば必ず使う
@@ -220,11 +255,17 @@ module Isuride
       json(ride_id:, fare:)
     end
 
-    AppPostRidesEstimatedFareRequest = Data.define(:pickup_coordinate, :destination_coordinate) do
+    AppPostRidesEstimatedFareRequest = Data.define(
+      :pickup_coordinate, #: Coordinate?
+      :destination_coordinate #: Coordinate?
+    )
+    class AppPostRidesEstimatedFareRequest
+      # @rbs (pickup_coordinate: Hash[Symbol, untyped], destination_coordinate: Hash[Symbol, untyped], **untyped) -> void
       def initialize(pickup_coordinate:, destination_coordinate:, **kwargs)
+        # オープンクラスの super が正しく評価できてない
         super(
-          pickup_coordinate: (Coordinate.new(**pickup_coordinate) unless pickup_coordinate.nil?),
-          destination_coordinate: (Coordinate.new(**destination_coordinate) unless destination_coordinate.nil?),
+          pickup_coordinate: (Coordinate.new(**pickup_coordinate) unless pickup_coordinate.nil?), # steep:ignore
+          destination_coordinate: (Coordinate.new(**destination_coordinate) unless destination_coordinate.nil?), # steep:ignore
           **kwargs,
         )
       end
@@ -247,7 +288,9 @@ module Isuride
       )
     end
 
-    AppPostRideEvaluationRequest = Data.define(:evaluation)
+    AppPostRideEvaluationRequest = Data.define(
+      :evaluation #: Integer
+    )
 
     # POST /api/app/rides/:ride_id/evaluation
     post '/rides/:ride_id/evaluation' do
@@ -263,7 +306,9 @@ module Isuride
         if ride.nil?
           raise HttpError.new(404, 'ride not found')
         end
-        status = get_latest_ride_status(tx, ride.fetch(:id))
+        rid = ride.fetch(:id)
+        raise unless rid.is_a?(String)
+        status = get_latest_ride_status(tx, rid)
 
         if status != 'ARRIVED'
           raise HttpError.new(400, 'not arrived yet')
@@ -286,20 +331,37 @@ module Isuride
           raise HttpError.new(400, 'payment token not registered')
         end
 
-        fare = calculate_discounted_fare(tx, ride.fetch(:user_id), ride, ride.fetch(:pickup_latitude), ride.fetch(:pickup_longitude), ride.fetch(:destination_latitude), ride.fetch(:destination_longitude))
+        r_uid = ride.fetch(:user_id)
+        r_pickup_lat = ride.fetch(:pickup_latitude)
+        r_pickup_lng = ride.fetch(:pickup_longitude)
+        r_dest_lat = ride.fetch(:destination_latitude)
+        r_dest_lng = ride.fetch(:destination_longitude)
+        raise unless r_uid.is_a?(String)
+        raise unless r_pickup_lat.is_a?(Integer)
+        raise unless r_pickup_lng.is_a?(Integer)
+        raise unless r_dest_lat.is_a?(Integer)
+        raise unless r_dest_lng.is_a?(Integer)
 
-        payment_gateway_url = tx.query("SELECT value FROM settings WHERE name = 'payment_gateway_url'").first.fetch(:value)
+        fare = calculate_discounted_fare(tx, r_uid, ride, r_pickup_lat, r_pickup_lng, r_dest_lat, r_dest_lng)
+
+        payment_gateway_url = tx.query("SELECT value FROM settings WHERE name = 'payment_gateway_url'").first!.fetch(:value)
+        raise unless payment_gateway_url.is_a?(String)
+        token = payment_token.fetch(:token)
+        raise unless token.is_a?(String)
 
         begin
-          PaymentGateway.new(payment_gateway_url, payment_token.fetch(:token)).request_post_payment(amount: fare) do
+          PaymentGateway.new(payment_gateway_url, token).request_post_payment(amount: fare) do
             tx.xquery('SELECT * FROM rides WHERE user_id = ? ORDER BY created_at ASC', ride.fetch(:user_id))
           end
         rescue PaymentGateway::ErroredUpstream => e
           raise HttpError.new(502, e.message)
         end
 
+        r_updated_at = ride.fetch(:updated_at)
+        raise unless r_updated_at.is_a?(Time)
+
         {
-          completed_at: time_msec(ride.fetch(:updated_at)),
+          completed_at: time_msec(r_updated_at),
         }
       end
 
@@ -312,17 +374,33 @@ module Isuride
         ride = tx.xquery('SELECT * FROM rides WHERE user_id = ? ORDER BY created_at DESC LIMIT 1', @current_user.id).first
         if ride.nil?
           halt json(data: nil, retry_after_ms: 30)
+          raise
         end
+
+        r_id = ride.fetch(:id)
+        raise unless r_id.is_a?(String)
+        r_pickup_lat = ride.fetch(:pickup_latitude)
+        raise unless r_pickup_lat.is_a?(Integer)
+        r_pickup_lng = ride.fetch(:pickup_longitude)
+        raise unless r_pickup_lng.is_a?(Integer)
+        r_dest_lat = ride.fetch(:destination_latitude)
+        raise unless r_dest_lat.is_a?(Integer)
+        r_dest_lng = ride.fetch(:destination_longitude)
+        raise unless r_dest_lng.is_a?(Integer)
+        r_created_at = ride.fetch(:created_at)
+        raise unless r_created_at.is_a?(Time)
+        r_updated_at = ride.fetch(:updated_at)
+        raise unless r_updated_at.is_a?(Time)
 
         yet_sent_ride_status = tx.xquery('SELECT * FROM ride_statuses WHERE ride_id = ? AND app_sent_at IS NULL ORDER BY created_at ASC LIMIT 1', ride.fetch(:id)).first
         status =
           if yet_sent_ride_status.nil?
-            get_latest_ride_status(tx, ride.fetch(:id))
+            get_latest_ride_status(tx, r_id)
           else
             yet_sent_ride_status.fetch(:status)
           end
 
-        fare = calculate_discounted_fare(tx, @current_user.id, ride, ride.fetch(:pickup_latitude), ride.fetch(:pickup_longitude), ride.fetch(:destination_latitude), ride.fetch(:destination_longitude))
+        fare = calculate_discounted_fare(tx, @current_user.id, ride, r_pickup_lat, r_pickup_lng, r_dest_lat, r_dest_lng)
 
         response = {
           data: {
@@ -337,16 +415,21 @@ module Isuride
             },
             fare:,
             status:,
-            created_at: time_msec(ride.fetch(:created_at)),
-            updated_at: time_msec(ride.fetch(:updated_at)),
+            created_at: time_msec(r_created_at),
+            updated_at: time_msec(r_updated_at),
           },
           retry_after_ms: 30,
         }
 
         unless ride.fetch(:chair_id).nil?
-          chair = tx.xquery('SELECT * FROM chairs WHERE id = ?', ride.fetch(:chair_id)).first
-          stats = get_chair_stats(tx, chair.fetch(:id))
-          response[:data][:chair] = {
+          chair = tx.xquery('SELECT * FROM chairs WHERE id = ?', ride.fetch(:chair_id)).first!
+          c_id = chair.fetch(:id)
+          raise unless c_id.is_a?(String)
+          stats = get_chair_stats(tx, c_id)
+          # ここで response の型が
+          # `(::Hash[::Symbol, (::Mysql2::row_value_type | ::Hash[::Symbol, ::Mysql2::row_value_type] | ::Integer)] | ::Integer)`
+          # になってるのは何かがおかしそう。373行目の response を定義しようとしているのが原因なのかな
+          response[:data][:chair] = { # steep:ignore NoMethod
             id: chair.fetch(:id),
             name: chair.fetch(:name),
             model: chair.fetch(:model),
@@ -410,8 +493,10 @@ module Isuride
 
           skip = false
           rides.each do |ride|
+            r_id = ride.fetch(:id)
+            raise unless r_id.is_a?(String)
             # 過去にライドが存在し、かつ、それが完了していない場合はスキップ
-            status = get_latest_ride_status(tx, ride.fetch(:id))
+            status = get_latest_ride_status(tx, r_id)
             if status != 'COMPLETED'
               skip = true
               break
@@ -427,7 +512,11 @@ module Isuride
             next
           end
 
-          if calculate_distance(latitude, longitude, chair_location.fetch(:latitude), chair_location.fetch(:longitude)) <= distance
+          cl_lat = chair_location.fetch(:latitude)
+          raise unless cl_lat.is_a?(Integer)
+          cl_lng = chair_location.fetch(:longitude)
+          raise unless cl_lng.is_a?(Integer)
+          if calculate_distance(latitude, longitude, cl_lat, cl_lng) <= distance
             {
               id: chair.fetch(:id),
               name: chair.fetch(:name),
@@ -440,7 +529,8 @@ module Isuride
           end
         end
 
-        retrieved_at = tx.query('SELECT CURRENT_TIMESTAMP(6)', as: :array).first[0]
+        retrieved_at = tx.query('SELECT CURRENT_TIMESTAMP(6)', as: :array).first![0]
+        raise unless retrieved_at.is_a?(Time)
 
         {
           chairs: nearby_chairs,
@@ -452,6 +542,7 @@ module Isuride
     end
 
     helpers do
+      # @rbs (Mysql2::Client[::Mysql2::ResultAsHash], String) -> { total_rides_count: Integer, total_evaluation_avg: Float }
       def get_chair_stats(tx, chair_id)
         rides = tx.xquery('SELECT * FROM rides WHERE chair_id = ? ORDER BY updated_at DESC', chair_id)
 
@@ -460,15 +551,19 @@ module Isuride
         rides.each do |ride|
           ride_statuses = tx.xquery('SELECT * FROM ride_statuses WHERE ride_id = ? ORDER BY created_at', ride.fetch(:id))
 
-          arrived_at = nil
-          pickup_at = nil
+          arrived_at = nil #: Time?
+          pickup_at = nil #: Time?
           is_completed = false
           ride_statuses.each do |status|
             case status.fetch(:status)
             when 'ARRIVED'
-              arrived_at = status.fetch(:created_at)
+              status_created_at = status.fetch(:created_at)
+              raise unless status_created_at.is_a?(Time)
+              arrived_at = status_created_at
             when 'CARRYING'
-              pickup_at = status.fetch(:created_at)
+              status_created_at = status.fetch(:created_at)
+              raise unless status_created_at.is_a?(Time)
+              pickup_at = status_created_at
             when 'COMPLETED'
               is_completed = true
             end
@@ -481,7 +576,9 @@ module Isuride
           end
 
           total_rides_count += 1
-          total_evaluation += ride.fetch(:evaluation)
+          evaluation = ride.fetch(:evaluation)
+          raise unless evaluation.is_a?(Integer)
+          total_evaluation += evaluation
         end
 
         total_evaluation_avg =
@@ -497,6 +594,7 @@ module Isuride
         }
       end
 
+      # @rbs (Mysql2::Client[::Mysql2::ResultAsHash], String, Hash[Symbol, untyped]?, Integer, Integer, Integer, Integer) -> Integer
       def calculate_discounted_fare(tx, user_id, ride, pickup_latitude, pickup_longitude, dest_latitude, dest_longitude)
         discount =
           if !ride.nil?
@@ -526,7 +624,7 @@ module Isuride
             else
               coupon.fetch(:discount)
             end
-          end
+          end #: Integer
 
         metered_fare = FARE_PER_DISTANCE * calculate_distance(pickup_latitude, pickup_longitude, dest_latitude, dest_longitude)
         discounted_metered_fare = [metered_fare - discount, 0].max

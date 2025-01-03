@@ -6,7 +6,9 @@ require 'isuride/base_handler'
 
 module Isuride
   class InitializeHandler < BaseHandler
-    PostInitializeRequest = Data.define(:payment_server)
+    PostInitializeRequest = Data.define(
+      :payment_server #: String
+    )
 
     post '/api/initialize' do
       req = bind_json(PostInitializeRequest)

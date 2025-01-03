@@ -8,8 +8,14 @@ module Isuride
     class ErroredUpstream < StandardError
     end
 
-    def initialize: (untyped payment_gateway_url, untyped token) -> untyped
+    @payment_gateway_url: String
 
-    def request_post_payment: (untyped param) ?{ (?) -> untyped } -> untyped
+    @token: String
+
+    # @rbs (String, String) -> void
+    def initialize: (String, String) -> void
+
+    # @rbs (Hash[untyped, untyped]) { () -> ::Mysql2::ResultAsHash } -> void
+    def request_post_payment: (Hash[untyped, untyped]) { () -> ::Mysql2::ResultAsHash } -> void
   end
 end

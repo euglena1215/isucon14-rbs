@@ -14,3 +14,4 @@ gem 'rake', require: false
 gem 'rbs', require: false
 gem "steep", require: false
 gem 'rbs-inline', require: false
+gem 'listen', require: false
