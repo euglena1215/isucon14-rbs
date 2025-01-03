@@ -104,9 +104,7 @@ module Isuride
 
       # @rbs (Mysql2::Client[::Mysql2::ResultAsHash], String) -> String
       def get_latest_ride_status(tx, ride_id)
-        status = tx.xquery('SELECT status FROM ride_statuses WHERE ride_id = ? ORDER BY created_at DESC LIMIT 1', ride_id).first!.fetch(:status)
-        raise unless status.is_a?(String)
-        status
+        tx.xquery('SELECT status FROM ride_statuses WHERE ride_id = ? ORDER BY created_at DESC LIMIT 1', ride_id).first!.fetch(:status) #: String
       end
 
       # マンハッタン距離を求める

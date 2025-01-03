@@ -91,9 +91,10 @@ module Isuride
 
         ride = tx.xquery('SELECT * FROM rides WHERE chair_id = ? ORDER BY updated_at DESC LIMIT 1', @current_chair.id).first
         unless ride.nil?
-          r_id = ride.fetch(:id)
-          raise unless r_id.is_a?(String)
-          status = get_latest_ride_status(tx, r_id)
+          status = get_latest_ride_status(
+            tx,
+            ride.fetch(:id) #: String
+          )
           if status != 'COMPLETED' && status != 'CANCELED'
             if req.latitude == ride.fetch(:pickup_latitude) && req.longitude == ride.fetch(:pickup_longitude) && status == 'ENROUTE'
               tx.xquery('INSERT INTO ride_statuses (id, ride_id, status) VALUES (?, ?, ?)', ULID.generate, ride.fetch(:id), 'PICKUP')
@@ -105,9 +106,11 @@ module Isuride
           end
         end
 
-        cl_created_at = location.fetch(:created_at)
-        raise unless cl_created_at.is_a?(Time)
-        { recorded_at: time_msec(cl_created_at) }
+        {
+          recorded_at: time_msec(
+            location.fetch(:created_at) #: Time
+          )
+        }
       end
 
       json(response)
@@ -121,13 +124,14 @@ module Isuride
           halt json(data: nil, retry_after_ms: 30)
           raise
         end
-        r_id = ride.fetch(:id)
-        raise unless r_id.is_a?(String)
 
         yet_sent_ride_status = tx.xquery('SELECT * FROM ride_statuses WHERE ride_id = ? AND chair_sent_at IS NULL ORDER BY created_at ASC LIMIT 1', ride.fetch(:id)).first
         status =
           if yet_sent_ride_status.nil?
-            get_latest_ride_status(tx, r_id)
+            get_latest_ride_status(
+              tx,
+              ride.fetch(:id) #: String
+            )
           else
             yet_sent_ride_status.fetch(:status)
           end
@@ -183,9 +187,10 @@ module Isuride
           tx.xquery('INSERT INTO ride_statuses (id, ride_id, status) VALUES (?, ?, ?)', ULID.generate, ride.fetch(:id), 'ENROUTE')
 	      # After Picking up user
         when 'CARRYING'
-          r_id = ride.fetch(:id)
-          raise unless r_id.is_a?(String)
-          status = get_latest_ride_status(tx, r_id)
+          status = get_latest_ride_status(
+            tx,
+            ride.fetch(:id) #: String
+          )
           if status != 'PICKUP'
             raise HttpError.new(400, 'chair has not arrived yet')
           end

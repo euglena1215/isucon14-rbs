@@ -141,14 +141,14 @@ module Isuride
 
       json(
         chairs: chairs.map { |chair|
-          c_created_at = chair.fetch(:created_at)
-          raise unless c_created_at.is_a?(Time)
           {
             id: chair.fetch(:id),
             name: chair.fetch(:name),
             model: chair.fetch(:model),
             active: chair.fetch(:is_active),
-            registered_at: time_msec(c_created_at),
+            registered_at: time_msec(
+              chair.fetch(:created_at) #: Time
+            ),
             total_distance: chair.fetch(:total_distance),
           }.tap do |c|
             unless chair.fetch(:total_distance_updated_at).nil?

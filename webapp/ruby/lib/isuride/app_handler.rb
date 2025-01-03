@@ -118,28 +118,23 @@ module Isuride
         rides = tx.xquery('SELECT * FROM rides WHERE user_id = ? ORDER BY created_at DESC', @current_user.id)
 
         rides.filter_map do |ride|
-          ride_id = ride.fetch(:id)
-          raise unless ride_id.is_a?(String)
-          status = get_latest_ride_status(tx, ride_id)
+          status = get_latest_ride_status(
+            tx,
+            ride.fetch(:id) #: String
+          )
           if status != 'COMPLETED'
             next
           end
 
-          ride_created_at = ride.fetch(:created_at)
-          ride_updated_at = ride.fetch(:updated_at)
-          raise unless ride_created_at.is_a?(Time)
-          raise unless ride_updated_at.is_a?(Time)
-
-          ride_pickup_latitude = ride.fetch(:pickup_latitude)
-          ride_pickup_longitude = ride.fetch(:pickup_longitude)
-          ride_dest_latitude = ride.fetch(:destination_latitude)
-          ride_dest_longitude = ride.fetch(:destination_longitude)
-          raise unless ride_pickup_latitude.is_a?(Integer)
-          raise unless ride_pickup_longitude.is_a?(Integer)
-          raise unless ride_dest_latitude.is_a?(Integer)
-          raise unless ride_dest_longitude.is_a?(Integer)
-
-          fare = calculate_discounted_fare(tx, @current_user.id, ride, ride_pickup_latitude, ride_pickup_longitude, ride_dest_latitude, ride_dest_latitude)
+          fare = calculate_discounted_fare(
+            tx,
+            @current_user.id,
+            ride,
+            ride.fetch(:pickup_latitude), #: Integer
+            ride.fetch(:pickup_longitude), #: Integer
+            ride.fetch(:destination_latitude), #: Integer
+            ride.fetch(:destination_longitude) #: Integer
+          )
 
           chair = tx.xquery('SELECT * FROM chairs WHERE id = ?', ride.fetch(:chair_id)).first!
           owner = tx.xquery('SELECT * FROM owners WHERE id = ?', chair.fetch(:owner_id)).first!
@@ -156,8 +151,12 @@ module Isuride
             },
             fare:,
             evaluation: ride.fetch(:evaluation),
-            requested_at: time_msec(ride_created_at),
-            completed_at: time_msec(ride_updated_at),
+            requested_at: time_msec(
+              ride.fetch(:created_at) #: Time
+            ),
+            completed_at: time_msec(
+              ride.fetch(:updated_at) #: Time
+            ),
             chair: {
               id: chair.fetch(:id),
               name: chair.fetch(:name),
@@ -202,9 +201,10 @@ module Isuride
         rides = tx.xquery('SELECT * FROM rides WHERE user_id = ?', @current_user.id).to_a
 
         continuing_ride_count = rides.count do |ride|
-          rid = ride.fetch(:id)
-          raise unless rid.is_a?(String)
-          status = get_latest_ride_status(tx, rid)
+          status = get_latest_ride_status(
+            tx,
+            ride.fetch(:id) #: String
+          )
           status != 'COMPLETED'
         end
 
@@ -306,9 +306,10 @@ module Isuride
         if ride.nil?
           raise HttpError.new(404, 'ride not found')
         end
-        rid = ride.fetch(:id)
-        raise unless rid.is_a?(String)
-        status = get_latest_ride_status(tx, rid)
+        status = get_latest_ride_status(
+          tx,
+          ride.fetch(:id) #: String
+        )
 
         if status != 'ARRIVED'
           raise HttpError.new(400, 'not arrived yet')
@@ -331,37 +332,33 @@ module Isuride
           raise HttpError.new(400, 'payment token not registered')
         end
 
-        r_uid = ride.fetch(:user_id)
-        r_pickup_lat = ride.fetch(:pickup_latitude)
-        r_pickup_lng = ride.fetch(:pickup_longitude)
-        r_dest_lat = ride.fetch(:destination_latitude)
-        r_dest_lng = ride.fetch(:destination_longitude)
-        raise unless r_uid.is_a?(String)
-        raise unless r_pickup_lat.is_a?(Integer)
-        raise unless r_pickup_lng.is_a?(Integer)
-        raise unless r_dest_lat.is_a?(Integer)
-        raise unless r_dest_lng.is_a?(Integer)
-
-        fare = calculate_discounted_fare(tx, r_uid, ride, r_pickup_lat, r_pickup_lng, r_dest_lat, r_dest_lng)
+        fare = calculate_discounted_fare(
+          tx,
+          ride.fetch(:user_id), #: String
+          ride,
+          ride.fetch(:pickup_latitude), #: Integer
+          ride.fetch(:pickup_longitude), #: Integer
+          ride.fetch(:destination_latitude), #: Integer
+          ride.fetch(:destination_longitude) #: Integer
+        )
 
         payment_gateway_url = tx.query("SELECT value FROM settings WHERE name = 'payment_gateway_url'").first!.fetch(:value)
-        raise unless payment_gateway_url.is_a?(String)
-        token = payment_token.fetch(:token)
-        raise unless token.is_a?(String)
 
         begin
-          PaymentGateway.new(payment_gateway_url, token).request_post_payment(amount: fare) do
+          PaymentGateway.new(
+            payment_gateway_url, #: String
+            payment_token.fetch(:token) #: String
+          ).request_post_payment(amount: fare) do
             tx.xquery('SELECT * FROM rides WHERE user_id = ? ORDER BY created_at ASC', ride.fetch(:user_id))
           end
         rescue PaymentGateway::ErroredUpstream => e
           raise HttpError.new(502, e.message)
         end
 
-        r_updated_at = ride.fetch(:updated_at)
-        raise unless r_updated_at.is_a?(Time)
-
         {
-          completed_at: time_msec(r_updated_at),
+          completed_at: time_msec(
+            ride.fetch(:updated_at) #: Time
+          ),
         }
       end
 
@@ -377,30 +374,26 @@ module Isuride
           raise
         end
 
-        r_id = ride.fetch(:id)
-        raise unless r_id.is_a?(String)
-        r_pickup_lat = ride.fetch(:pickup_latitude)
-        raise unless r_pickup_lat.is_a?(Integer)
-        r_pickup_lng = ride.fetch(:pickup_longitude)
-        raise unless r_pickup_lng.is_a?(Integer)
-        r_dest_lat = ride.fetch(:destination_latitude)
-        raise unless r_dest_lat.is_a?(Integer)
-        r_dest_lng = ride.fetch(:destination_longitude)
-        raise unless r_dest_lng.is_a?(Integer)
-        r_created_at = ride.fetch(:created_at)
-        raise unless r_created_at.is_a?(Time)
-        r_updated_at = ride.fetch(:updated_at)
-        raise unless r_updated_at.is_a?(Time)
-
         yet_sent_ride_status = tx.xquery('SELECT * FROM ride_statuses WHERE ride_id = ? AND app_sent_at IS NULL ORDER BY created_at ASC LIMIT 1', ride.fetch(:id)).first
         status =
           if yet_sent_ride_status.nil?
-            get_latest_ride_status(tx, r_id)
+            get_latest_ride_status(
+              tx,
+              ride.fetch(:id) #: String
+            )
           else
             yet_sent_ride_status.fetch(:status)
           end
 
-        fare = calculate_discounted_fare(tx, @current_user.id, ride, r_pickup_lat, r_pickup_lng, r_dest_lat, r_dest_lng)
+        fare = calculate_discounted_fare(
+          tx,
+          @current_user.id,
+          ride,
+          ride.fetch(:pickup_latitude), #: Integer
+          ride.fetch(:pickup_longitude), #: Integer
+          ride.fetch(:destination_latitude), #: Integer
+          ride.fetch(:destination_longitude) #: Integer
+        )
 
         response = {
           data: {
@@ -415,17 +408,22 @@ module Isuride
             },
             fare:,
             status:,
-            created_at: time_msec(r_created_at),
-            updated_at: time_msec(r_updated_at),
+            created_at: time_msec(
+              ride.fetch(:created_at) #: Time
+            ),
+            updated_at: time_msec(
+              ride.fetch(:updated_at) #: Time
+            ),
           },
           retry_after_ms: 30,
         }
 
         unless ride.fetch(:chair_id).nil?
           chair = tx.xquery('SELECT * FROM chairs WHERE id = ?', ride.fetch(:chair_id)).first!
-          c_id = chair.fetch(:id)
-          raise unless c_id.is_a?(String)
-          stats = get_chair_stats(tx, c_id)
+          stats = get_chair_stats(
+            tx,
+            chair.fetch(:id) #: String
+          )
           # ここで response の型が
           # `(::Hash[::Symbol, (::Mysql2::row_value_type | ::Hash[::Symbol, ::Mysql2::row_value_type] | ::Integer)] | ::Integer)`
           # になってるのは何かがおかしそう。373行目の response を定義しようとしているのが原因なのかな
@@ -493,10 +491,11 @@ module Isuride
 
           skip = false
           rides.each do |ride|
-            r_id = ride.fetch(:id)
-            raise unless r_id.is_a?(String)
             # 過去にライドが存在し、かつ、それが完了していない場合はスキップ
-            status = get_latest_ride_status(tx, r_id)
+            status = get_latest_ride_status(
+              tx,
+              ride.fetch(:id) #: String
+            )
             if status != 'COMPLETED'
               skip = true
               break
@@ -512,11 +511,12 @@ module Isuride
             next
           end
 
-          cl_lat = chair_location.fetch(:latitude)
-          raise unless cl_lat.is_a?(Integer)
-          cl_lng = chair_location.fetch(:longitude)
-          raise unless cl_lng.is_a?(Integer)
-          if calculate_distance(latitude, longitude, cl_lat, cl_lng) <= distance
+          if calculate_distance(
+            latitude,
+            longitude,
+            chair_location.fetch(:latitude), #: Integer
+            chair_location.fetch(:longitude) #: Integer
+          ) <= distance
             {
               id: chair.fetch(:id),
               name: chair.fetch(:name),
@@ -530,11 +530,12 @@ module Isuride
         end
 
         retrieved_at = tx.query('SELECT CURRENT_TIMESTAMP(6)', as: :array).first![0]
-        raise unless retrieved_at.is_a?(Time)
 
         {
           chairs: nearby_chairs,
-          retrieved_at: time_msec(retrieved_at),
+          retrieved_at: time_msec(
+            retrieved_at #: Time
+          ),
         }
       end
 
@@ -557,12 +558,10 @@ module Isuride
           ride_statuses.each do |status|
             case status.fetch(:status)
             when 'ARRIVED'
-              status_created_at = status.fetch(:created_at)
-              raise unless status_created_at.is_a?(Time)
+              status_created_at = status.fetch(:created_at) #: Time
               arrived_at = status_created_at
             when 'CARRYING'
-              status_created_at = status.fetch(:created_at)
-              raise unless status_created_at.is_a?(Time)
+              status_created_at = status.fetch(:created_at) #: Time
               pickup_at = status_created_at
             when 'COMPLETED'
               is_completed = true
@@ -576,8 +575,7 @@ module Isuride
           end
 
           total_rides_count += 1
-          evaluation = ride.fetch(:evaluation)
-          raise unless evaluation.is_a?(Integer)
+          evaluation = ride.fetch(:evaluation) #: Integer
           total_evaluation += evaluation
         end
 
